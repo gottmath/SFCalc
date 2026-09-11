@@ -4,23 +4,28 @@ import io.github.thebusybiscuit.slimefun5.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun5.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun5.libraries.dough.common.CommonPatterns;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 import static io.github.seggan.sfcalc.StringRegistry.format;
 
-public class CalcCommand extends SubCommand {
+/**
+ * Tells the player how much more of each resource they still need, taking their
+ * inventory into account. This command was removed from the upstream master branch
+ * when InfinityLib was dropped (commit 9090993, 2024); it is restored here on top
+ * of the current master logic as requested.
+ */
+public class NeededCommand extends SubCommand {
 
-    private static final Set<String> ids = new HashSet<>();
+    private static final List<String> ids = new ArrayList<>();
     private final SFCalc plugin = SFCalc.inst();
 
-    public CalcCommand() {
-        super("calc", "Calculates the resources needed for a given item");
+    public NeededCommand() {
+        super("needed", "Tells you how much more resources are needed");
     }
 
     @Override
@@ -30,6 +35,11 @@ public class CalcCommand extends SubCommand {
         SlimefunItem item;
 
         StringRegistry registry = plugin.getStringRegistry();
+
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(format(registry.getNotAPlayerString()));
+            return;
+        }
 
         if (args.length > 2 || args.length == 0) {
             return;
@@ -64,7 +74,7 @@ public class CalcCommand extends SubCommand {
 
         SFCalcMetrics.addItemSearched(item.getItemName());
 
-        plugin.getCalc().printResults(sender, item, amount, false);
+        plugin.getCalc().printResults(sender, item, amount, true);
     }
 
     @Override

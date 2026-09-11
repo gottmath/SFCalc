@@ -1,13 +1,16 @@
 name: SFCalc
 main: io.github.seggan.sfcalc.SFCalc
-version: ${version}
+version: ${project.version}
 author: Seggan
+website: https://github.com/Seggan/SFCalc
+
+description: A Slimefun Addon that calculates the resources needed to craft items
 depend: [Slimefun]
-api-version: 1.15
+api-version: 1.17
 
 commands:
   sfcalc:
     description: Base SFCalc command
-    usage: "Usage: /sfcalc calc <item> [amount]"
+    usage: "Usage: /sfcalc <calc|needed|website> [item] [amount]"
     aliases:
       - sfc

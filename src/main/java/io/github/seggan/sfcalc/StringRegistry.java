@@ -1,8 +1,7 @@
 package io.github.seggan.sfcalc;
 
-import io.github.thebusybiscuit.slimefun4.libraries.dough.common.ChatColors;
-import lombok.Getter;
-import org.apache.commons.lang.Validate;
+import io.github.thebusybiscuit.slimefun5.libraries.dough.common.ChatColors;
+import io.github.thebusybiscuit.slimefun5.libraries.dough.common.Validate;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import javax.annotation.Nonnull;
@@ -12,7 +11,9 @@ import java.io.UncheckedIOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-@Getter
+/**
+ * Loads, caches and formats the configurable strings of SFCalc.
+ */
 public final class StringRegistry {
 
     private final Pattern percentPattern = Pattern.compile("(%s|%d)");
@@ -48,10 +49,54 @@ public final class StringRegistry {
         }
     }
 
+    public String getHeaderString() {
+        return headerString;
+    }
+
+    public String getHeaderAmountString() {
+        return headerAmountString;
+    }
+
+    public String getStackString() {
+        return stackString;
+    }
+
+    public String getAmountString() {
+        return amountString;
+    }
+
+    public String getNeededString() {
+        return neededString;
+    }
+
+    public String getNoItemString() {
+        return noItemString;
+    }
+
+    public String getNotANumberString() {
+        return notANumberString;
+    }
+
+    public String getTooManyCategoriesString() {
+        return tooManyCategoriesString;
+    }
+
+    public String getTooManyItemsString() {
+        return tooManyItemsString;
+    }
+
+    public String getNotAPlayerString() {
+        return notAPlayerString;
+    }
+
+    public String getInvalidNumberString() {
+        return invalidNumberString;
+    }
+
     @Nonnull
     public static String format(@Nonnull String formatString, @Nonnull Object... objects) {
-        Validate.notNull(formatString);
-        Validate.noNullElements(objects);
+        Validate.notNull(formatString, "The format string must not be null!");
+        Validate.noNullElements(objects, "The objects must not contain null elements!");
 
         String finalString = formatString;
 

@@ -1,7 +1,7 @@
 package io.github.seggan.sfcalc;
 
-import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
-import io.github.thebusybiscuit.slimefun4.libraries.dough.items.ItemUtils;
+import io.github.thebusybiscuit.slimefun5.api.items.SlimefunItem;
+import io.github.thebusybiscuit.slimefun5.libraries.dough.items.ItemUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -10,7 +10,11 @@ import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static io.github.seggan.sfcalc.StringRegistry.format;
 
@@ -21,6 +25,7 @@ import static io.github.seggan.sfcalc.StringRegistry.format;
  * @author TheBusyBiscuit
  */
 public class Calculator {
+
     private final SFCalc plugin;
 
     private final ThreadLocal<SlimefunItem> top = new ThreadLocal<>();
@@ -33,10 +38,10 @@ public class Calculator {
      * Calculates the resources for the item and prints the out to the specified {@link CommandSender}
      *
      * @param sender the sender to send the calculation to
-     * @param item   the Slimefun item to calculate
+     * @param item the Slimefun item to calculate
      * @param amount the amount to calculate for
      * @param needed whether it should print out how many are needed. Requires {@code sender instanceof Player}
-     *               to be {@code true}
+     * to be {@code true}
      */
     public void printResults(@Nonnull CommandSender sender, @Nonnull SlimefunItem item, long amount, boolean needed) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -114,25 +119,38 @@ public class Calculator {
 
         // uncraft the material first to bypass the blacklist
         int multiplier = parent.getRecipeOutput().getAmount();
-        long operations = (amount + multiplier - 1) / multiplier; // ceiling(needed/multiplier) but abusing fast ints
-        for (ItemStack item : parent.getRecipe()) {
-            if (item == null) continue;
-            add(result, item, item.getAmount() * operations);
+        if (multiplier <= 0) {
+            multiplier = 1;
         }
+        long operations = (amount + multiplier - 1) / multiplier; // ceiling(needed/multiplier) but abusing fast ints
 
-        // uncraft submaterials
-        SlimefunItem next = getNextItem(result);
-        while (next != null) {
-            multiplier = next.getRecipeOutput().getAmount();
-            operations = (result.get(next.getItem()) + multiplier - 1) / multiplier; // ceiling(needed/multiplier) but abusing fast ints
-            add(result, next.getItem(), -(multiplier * operations));
-            for (ItemStack item : next.getRecipe()) {
+        try {
+            for (ItemStack item : parent.getRecipe()) {
                 if (item == null) continue;
                 add(result, item, item.getAmount() * operations);
             }
-            next = getNextItem(result);
+
+            // uncraft submaterials
+            SlimefunItem next = getNextItem(result);
+            while (next != null) {
+                multiplier = next.getRecipeOutput().getAmount();
+                if (multiplier <= 0) {
+                    multiplier = 1;
+                }
+                operations = (result.get(next.getItem()) + multiplier - 1) / multiplier; // ceiling(needed/multiplier) but abusing fast ints
+                add(result, next.getItem(), -(multiplier * operations));
+                for (ItemStack item : next.getRecipe()) {
+                    if (item == null) continue;
+                    add(result, item, item.getAmount() * operations);
+                }
+                next = getNextItem(result);
+            }
+        } finally {
+            // always clear the ThreadLocal guard, even on exception, or a pooled
+            // scheduler thread would keep the reference and bypass the anti-loop
+            // check on the next calculation run on that thread
+            top.remove();
         }
-        top.remove();
 
         return result;
     }
@@ -150,10 +168,8 @@ public class Calculator {
             SlimefunItem item = SlimefunItem.getByItem(entry.getKey());
             if (item != null) {
                 if (!plugin.getBlacklistedRecipes().contains(item.getRecipeType())
-                        &&
-                        !plugin.getBlacklistedIds().contains(item.getId())
-                        &&
-                        top.get() != item
+                        && !plugin.getBlacklistedIds().contains(item.getId())
+                        && top.get() != item
                 ) {
                     if (entry.getValue() > 0) {
                         return item;
@@ -174,4 +190,5 @@ public class Calculator {
     private String getBasicName(ItemStack stack) {
         return ChatColor.stripColor(ItemUtils.getItemName(stack));
     }
+
 }
